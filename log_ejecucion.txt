@@ -1,0 +1,14 @@
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | ======================================================================
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | INICIO script 01 — extracción por API (BCRPData)
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | Python 3.13.18 | requests 2.32.4
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | Panel 2012T1 a 2025T4 | descarga mensual 2011-1 a 2025-12 (180 meses por serie)
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | User-Agent: ProyectoAcademico-FinanzasI-UNCP-Tema82/1.0 (uso academico; contacto: e_2024200498D@uncp.edu.pe) | pausa 1.5 s
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | Encabezado de 4 líneas verificado (fecha de extracción 2026-11-23)
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | Serie PN01764AM: PBI manufactura no primaria (índice 2007 = 100), mensual → pbi_manuf_var en el script 03
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | GET https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PN01764AM/json/2011-1/2025-12/esp | intento 1/3 | HTTP 200 | 9941 bytes
+2026-11-23 03:09:48 -0500 | 01_extraccion_api | PN01764AM | «Producto bruto interno y demanda interna (índice 2007 = 100) - Manufactura - Manufactura no Primaria» | 180 observaciones (Ene.2011 a Dic.2025) | guardado en datos_crudos/bcrp/datos_crudos_2024200498D_bcrp_PN01764AM.json | SHA-256 88963e1dd76bcb8141d215a11feb787267b593f60c71eaee2d9cf513cbccc10d
+2026-11-23 03:09:50 -0500 | 01_extraccion_api | Serie PN38705PM: IPC Lima Metropolitana (índice dic. 2021 = 100), mensual, fuente INEI → deflactor de ln_activos en el script 03
+2026-11-23 03:09:50 -0500 | 01_extraccion_api | GET https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PN38705PM/json/2011-1/2025-12/esp | intento 1/3 | HTTP 200 | 9648 bytes
+2026-11-23 03:09:50 -0500 | 01_extraccion_api | PN38705PM | «Índice de precios Lima Metropolitana (índice Dic.2021 = 100) - Índice de Precios al Consumidor (IPC)» | 180 observaciones (Ene.2011 a Dic.2025) | guardado en datos_crudos/bcrp/datos_crudos_2024200498D_bcrp_PN38705PM.json | SHA-256 f2489efd593ae44b4438be806744159c477c9f8226e2de982a68a84e0484a793
+2026-11-23 03:09:50 -0500 | 01_extraccion_api | FIN correcto: 2 series descargadas
+2026-11-23 03:09:50 -0500 | 01_extraccion_api | ======================================================================
