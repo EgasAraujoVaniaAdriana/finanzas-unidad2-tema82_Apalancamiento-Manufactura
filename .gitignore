@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Proyecto Tema 82
+partes/
+.ipynb_checkpoints/
+avance.zip
+demo_resultados.zip
