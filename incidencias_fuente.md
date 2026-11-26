@@ -88,3 +88,46 @@ No se requiere sustitución de fuente ni autorización del docente.
 | **02:41-03:18** | **Corrida completa y válida** | — |
 
 **Decisión:** las corridas anteriores se conservan en el log (no se borran) y la válida es la última.
+
+---
+
+## Observación técnica · Unidad del título que no corresponde a sus cifras (Alicorp, 2025T4)
+
+| Campo | Detalle |
+|---|---|
+| Archivo | `datos_crudos/smv/datos_crudos_2024200498D_smv_73_2025T4_I_exp2026007262.html` |
+| Descarga | 2026-11-26 00:58:03 -0500 · SHA-256 `620ac295035fbfa845864c3aa03fe1f3bf5e27bbbcb5a3d9160fa494bfe7ae97` (`log_ejecucion.txt`) |
+| Qué dice el título | «ESTADOS FINANCIEROS, INDIVIDUAL, TRIMESTRE IV AL 31 DE DICIEMBRE DEL 2025 ( EN MILES DE DOLARES )», en todas las secciones del estado |
+| Qué se esperaba | «EN MILES DE NUEVOS SOLES», como en los otros 299 crudos del lote 1 |
+
+**Evidencia.** El total de activos al 31-dic-2024 es el mismo en tres crudos:
+
+| Crudo | Unidad del título | Total de activos al 31-dic-2024 |
+|---|---|---|
+| 2024T4 (`..._73_2024T4_I_exp2025007047.html`), columna actual | Miles de nuevos soles | 8 981 886 |
+| 2025T3 (`..._73_2025T3_I_exp2025047511.html`), columna comparativa | Miles de nuevos soles | 8 981 886 |
+| 2025T4 (`..._73_2025T4_I_exp2026007262.html`), columna comparativa | Miles de **dólares** | 8 981 886 |
+
+**Interpretación.** Si la emisora hubiera cambiado su moneda de presentación, la NIC 21 exige expresar también las cifras comparativas en la nueva moneda, y el saldo de 2024 no coincidiría con el publicado en soles. Como coincide, las cifras de 2025T4 están en miles de soles y la unidad del título es una inconsistencia de rótulo. Es el único caso entre los 300 crudos del lote 1. La magnitud lo confirma: el total de activos pasa de 10 018 191 (30-set-2025) a 8 823 663 (31-dic-2025); leído en dólares, se habría triplicado en un trimestre.
+
+| Cómo verificarlo | (1) Abrir el crudo de 2025T4 y leer el título y la columna comparativa del estado de situación financiera. (2) Abrir los crudos de 2024T4 y 2025T3 y comparar el total de activos al 31-dic-2024. (3) En el portal de la SMV, las notas de los estados de Alicorp del IV trimestre de 2025 indican la moneda de presentación |
+
+**Decisión.** El crudo se conserva sin editar. El script 03 aplica una regla general: si el título de un estado indica una moneda distinta de soles y su columna comparativa coincide con el saldo del crudo del cierre anterior, se trata con la unidad de ese crudo y se registra en el log como `UNIDAD_CORREGIDA`, con la evidencia; si no coincide, el 03 se detiene (sería un cambio real de moneda).
+
+---
+
+## Observación técnica · Presentaciones incompletas del mismo expediente (Backus 2025T4 y San Juan 2025T2)
+
+| Campo | Detalle |
+|---|---|
+| Qué se observó | En la grilla de la SMV, un mismo expediente aparece con dos presentaciones de «Estados Financieros» y distinta fecha. Ejemplo: Backus (47), 2025T4, expediente 2026007423, presentado el 16/02/2026 09:53:22 p.m. y el 20/03/2026 08:18:52 p.m. La primera trae el estado de resultados, pero no el estado de situación financiera («No se encontraron registro coincidentes…»); la segunda trae los dos |
+| Efecto en la descarga del lote 1 | El nombre del crudo distinguía solo por expediente, así que las dos presentaciones daban el mismo nombre: el script guardó la primera (incompleta) y omitió la segunda. Por eso el log del lote 1 registra «ya existían: 1» en Cervecería San Juan (49) y Backus (47) |
+| Archivos afectados (guardados en Colab, nunca subidos al repositorio) | `datos_crudos_2024200498D_smv_49_2025T2_I_exp2025034256.html` (2026-11-26 01:14:14, 181 764 bytes, SHA-256 `af159b62872ddfdece67882a569fbf10458bd658e466d51e2c62c6836427006b`) y `datos_crudos_2024200498D_smv_47_2025T4_I_exp2026007423.html` (2026-11-26 01:22:44, 183 400 bytes, SHA-256 `8b63598efa9ed3b6f244a4585681e588339467eeec8678078d9f5a13fa05975a`). Pesan unos 70 KB menos que los demás crudos, porque les falta el balance |
+| Cómo se detectó | Revisión de partidas del lote 1 (sin conexión): esos dos archivos eran los únicos sin total de activos, propiedades, planta y equipo ni otros pasivos financieros. Se confirmó en el portal: la primera presentación no muestra el estado de situación financiera y la segunda sí |
+
+**Decisión.**
+1. Se borraron los dos archivos incompletos antes del primer commit de la etapa de descarga. Sus líneas `CRUDO` se conservan en el log como registro de lo ocurrido.
+2. Se agregó al script 02 una regla declarada en su docstring: si un expediente tiene varias presentaciones, se revisan de la más reciente a la más antigua y se guarda solo la primera que trae el estado de situación financiera y el estado de resultados con contenido; las incompletas no se guardan y quedan registradas en el log (líneas `PRESENTACIONES`, con todas las fechas y la elegida). Si todas fueran incompletas, se guarda la más reciente y se marca como dato faltante en el 03.
+3. Se volvió a ejecutar el lote 1: el script omitió los 298 crudos existentes y descargó esos dos trimestres aplicando la regla.
+
+| Cómo verificarlo | (1) En `log_ejecucion.txt`, las líneas `CRUDO` del 2026-11-26 01:14:14 y 01:22:44 (archivos borrados) y las líneas `PRESENTACIONES` y `CRUDO` de la nueva ejecución del lote 1. (2) En el portal de la SMV, buscar Backus, individual, 2025, IV trimestre: aparecen dos filas de «Estados Financieros» con el expediente 2026007423; la del 16/02/2026 no muestra el estado de situación financiera |
