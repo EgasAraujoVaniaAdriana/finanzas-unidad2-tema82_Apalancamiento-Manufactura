@@ -131,3 +131,14 @@ No se requiere sustitución de fuente ni autorización del docente.
 3. Se volvió a ejecutar el lote 1: el script omitió los 298 crudos existentes y descargó esos dos trimestres aplicando la regla.
 
 | Cómo verificarlo | (1) En `log_ejecucion.txt`, las líneas `CRUDO` del 2026-11-26 01:14:14 y 01:22:44 (archivos borrados) y las líneas `PRESENTACIONES` y `CRUDO` de la nueva ejecución del lote 1. (2) En el portal de la SMV, buscar Backus, individual, 2025, IV trimestre: aparecen dos filas de «Estados Financieros» con el expediente 2026007423; la del 16/02/2026 no muestra el estado de situación financiera |
+
+---
+
+## Observación técnica · Un trimestre con dos expedientes (Filamentos Industriales 2017T4)
+
+| Campo | Detalle |
+|---|---|
+| Qué se observó | Filamentos Industriales (108), 2017T4, tiene dos filas de «Estados Financieros» con expedientes distintos, presentadas el 15/02/2018: 2018006268 (06:28:08 p.m.) y 2018006275 (06:36:38 p.m.), ambas completas y del mismo tamaño (252 484 bytes) |
+| Efecto en el lote 2 | La regla vigente en ese momento agrupaba las presentaciones por expediente, así que se guardaron los dos (61 crudos para 60 trimestres) |
+| Decisión | Se amplió la regla de presentaciones a todo el trimestre: se guarda un solo crudo por trimestre, el de la presentación más reciente que trae el estado de situación financiera y el estado de resultados con contenido, sea del mismo expediente o de otro. Se borró antes del commit el crudo del expediente más antiguo (`datos_crudos_2024200498D_smv_108_2017T4_I_exp2018006268.html`, SHA-256 `0f77332477c5d88c48565d2fea4a96aa10c72e13a14a8abbe079d048a313353e`); su línea `CRUDO` se conserva en el log. El lote 1 no tenía trimestres con dos expedientes (60 crudos por emisora) |
+| Cómo verificarlo | En el portal de la SMV, buscar Filamentos Industriales, individual, 2017, IV trimestre: aparecen los dos expedientes. En `log_ejecucion.txt`, las dos líneas `CRUDO` de 108 y 2017T4 |

@@ -42,11 +42,12 @@ Almacenamiento y subida por lotes (etapa «descarga»):
       3) conservación: lo descargado queda respaldado en el repositorio lote
          por lote; si la sesión o el portal se cortan, solo se repite el lote
          en curso y lo ya guardado no se vuelve a pedir.
-    Si un mismo expediente aparece con varias presentaciones (por ejemplo,
-    una primera sin el estado de situación financiera y otra posterior completa), se guarda solo la
-    más reciente que traiga el balance y el estado de resultados con
-    contenido; las incompletas no se guardan y quedan registradas en el log
-    («PRESENTACIONES»).
+    Si un mismo trimestre aparece con varias presentaciones (del mismo
+    expediente o de expedientes distintos), por ejemplo, una primera sin el
+    estado de situación financiera y otra posterior completa, se guarda un
+    solo crudo: la más reciente que traiga el balance y el estado de
+    resultados con contenido; las incompletas no se guardan y quedan
+    registradas en el log («PRESENTACIONES»).
     El log registra cada lote («DESCARGA | lote k de 9»), cada decisión de
     selección («SELECCION») y cada archivo guardado («CRUDO») con su SHA-256
     y la unidad del título. Las observaciones sobre el contenido de los
@@ -683,51 +684,57 @@ def seleccionar_y_descargar(sesion, pagina_base, url_accion, codigo, es_retirada
         cuenta["decision"] = "EXCLUIDA"
         return cuenta
     cuenta["decision"] = "INCLUIDA"
-    # Filas del rango agrupadas por trimestre y expediente.
+    # Filas del rango agrupadas por trimestre (todas sus presentaciones y expedientes).
     grupos = {}
     for sopa, filas in paginas:
         for f in filas:
             if ANIO_PERIODO_MIN <= f["anio"] <= ANIO_PERIODO_MAX:
-                grupos.setdefault((f["anio"], f["trim"], f["expediente"]), []).append((sopa, f))
-    for (anio, trim, expediente), grupo in sorted(grupos.items()):
-        # Presentaciones distintas del mismo expediente, de la más reciente a la más antigua.
-        unicas, sellos = [], set()
-        for sopa, fila in sorted(grupo, key=lambda x: x[1]["sello"], reverse=True):
-            if fila["sello"] in sellos:
+                grupos.setdefault((f["anio"], f["trim"]), []).append((sopa, f))
+    for (anio, trim), grupo in sorted(grupos.items()):
+        # Reanudación: si el trimestre ya tiene su crudo, no se vuelve a pedir.
+        patron = f"datos_crudos_{CODIGO_MATRICULA}_smv_{codigo}_{anio}T{trim}_{TIPO_DESCARGA}_exp*.html"
+        if any(carpeta.glob(patron)):
+            cuenta["ya_existian"] += 1
+            continue
+        # Presentaciones distintas (expediente + fecha), de la más reciente a la más antigua.
+        unicas, vistas = [], set()
+        for sopa, fila in sorted(grupo, key=lambda x: (x[1]["sello"], x[1]["expediente"]), reverse=True):
+            clave = (fila["expediente"], fila["sello"])
+            if clave in vistas:
                 cuenta["filas_repetidas"] += 1       # misma fila dos veces en la grilla
                 continue
-            sellos.add(fila["sello"])
+            vistas.add(clave)
             unicas.append((sopa, fila))
-        ruta = carpeta / nombre_crudo(codigo, unicas[0][1])
-        if ruta.exists():
-            cuenta["ya_existian"] += 1               # reanudación: no se vuelve a pedir
-            continue
-        # Regla de presentaciones: se guarda la más reciente que traiga el balance y
-        # el estado de resultados con contenido; las incompletas (sin balance o sin estado de resultados) no se guardan y quedan
-        # registradas en el log. Si todas vienen vacías, se guarda la más reciente.
-        elegida, vacias, primera = None, [], None
+        # Regla de presentaciones: se guarda UN crudo por trimestre, el de la presentación
+        # más reciente que trae el estado de situación financiera y el estado de
+        # resultados con contenido, sea del mismo expediente o de otro. Las demás no se
+        # guardan y quedan registradas en el log. Si todas vienen incompletas, se guarda
+        # la más reciente (dato faltante en el 03).
+        elegida, incompletas, primera = None, [], None
         for sopa, fila in unicas:
             detalle, con_contenido = abrir_detalle(sesion, sopa, url_accion, codigo, fila)
             primera = primera or (detalle, fila)
             if con_contenido:
                 elegida = (detalle, fila)
                 break
-            vacias.append(fila["fecha"])
+            incompletas.append(f"exp {fila['expediente']} ({fila['fecha']})")
         if elegida is None:
             elegida = primera
-            vacias.remove(primera[1]["fecha"])       # la más reciente sí se guarda
-            registrar(f"ADVERTENCIA: {codigo} {anio}T{trim} exp {expediente}: ninguna presentación "
-                      "trae el estado completo; se guarda la más reciente (dato faltante en el 03)")
+            incompletas.pop(0)                       # la más reciente sí se guarda
+            registrar(f"ADVERTENCIA: {codigo} {anio}T{trim}: ninguna presentación trae el estado "
+                      "completo; se guarda la más reciente (dato faltante en el 03)")
+        ruta = carpeta / nombre_crudo(codigo, elegida[1])
         cuenta["unidades"].add(guardar_detalle(elegida[0], codigo, elegida[1], ruta))
         cuenta["guardados"] += 1
-        if len(unicas) > 1 or vacias:
-            registrar(f"PRESENTACIONES | {codigo} | {anio}T{trim} | exp {expediente} | "
-                      f"{len(unicas)} presentaciones: {', '.join(f['fecha'] for _, f in unicas)} | "
-                      f"guardada: {elegida[1]['fecha']} | incompletas no guardadas: {', '.join(vacias) or '-'}")
+        if len(unicas) > 1:
+            otras = [f"exp {f['expediente']} ({f['fecha']})" for _, f in unicas if f is not elegida[1]]
+            registrar(f"PRESENTACIONES | {codigo} | {anio}T{trim} | {len(unicas)} presentaciones | "
+                      f"guardada: exp {elegida[1]['expediente']} ({elegida[1]['fecha']}) | "
+                      f"no guardadas: {', '.join(otras)} | "
+                      f"de ellas incompletas: {', '.join(incompletas) or '-'}")
         if tope is not None and cuenta["guardados"] >= tope:
             return cuenta
     return cuenta
-
 
 def decisiones_previas():
     """
