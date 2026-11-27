@@ -142,3 +142,14 @@ No se requiere sustitución de fuente ni autorización del docente.
 | Efecto en el lote 2 | La regla vigente en ese momento agrupaba las presentaciones por expediente, así que se guardaron los dos (61 crudos para 60 trimestres) |
 | Decisión | Se amplió la regla de presentaciones a todo el trimestre: se guarda un solo crudo por trimestre, el de la presentación más reciente que trae el estado de situación financiera y el estado de resultados con contenido, sea del mismo expediente o de otro. Se borró antes del commit el crudo del expediente más antiguo (`datos_crudos_2024200498D_smv_108_2017T4_I_exp2018006268.html`, SHA-256 `0f77332477c5d88c48565d2fea4a96aa10c72e13a14a8abbe079d048a313353e`); su línea `CRUDO` se conserva en el log. El lote 1 no tenía trimestres con dos expedientes (60 crudos por emisora) |
 | Cómo verificarlo | En el portal de la SMV, buscar Filamentos Industriales, individual, 2017, IV trimestre: aparecen los dos expedientes. En `log_ejecucion.txt`, las dos líneas `CRUDO` de 108 y 2017T4 |
+
+---
+
+## Observación técnica · Moneda de presentación de los estados financieros (20 emisoras incluidas)
+
+| Campo | Detalle |
+|---|---|
+| Qué se observó | Al cerrar la descarga (1 200 crudos de 20 emisoras), la unidad del título de cada crudo, registrada en las líneas `CRUDO` del log, es «EN MILES DE NUEVOS SOLES» en 17 emisoras. Las otras tres usan dólares: **Indeco S.A. (330)**, los 60 trimestres en «EN MILES DE DOLARES»; **Quimpac S.A. (30011)**, 2011T1-2015T3 (19 trimestres) en soles y 2015T4-2025T4 (41 trimestres) en dólares; **Alicorp S.A.A. (73)**, solo 2025T4 rotulado en dólares |
+| Comprobación | Quimpac: el total de activos al 31/12/2014 es 243 962 en el crudo de 2014T4 y 81 778 en la columna comparativa del crudo de 2015T4 (cociente 2,98, cercano al tipo de cambio de fines de 2014). La empresa cambió su moneda de presentación y reexpresó el año anterior: es un cambio real, no un error de rótulo. Indeco: la unidad es la misma en todo el periodo (el total de activos al 31/12/2011 es 21 408 en los crudos de 2011T4 y 2012T4). Alicorp 2025T4: el título dice dólares, pero las cifras están en soles (ver la observación sobre la unidad del título de Alicorp 2025T4) |
+| Decisión | Los crudos se conservan tal como se publicaron. El tratamiento de la moneda (conversión o no, y el trimestre del cambio de Quimpac) se decide y documenta en el script 03 |
+| Cómo verificarlo | En `log_ejecucion.txt`, las líneas `CRUDO` de 330, 30011 y 73 (la unidad es el último campo). En el portal de la SMV, el título del detalle de Quimpac 2015T3 y 2015T4, individual |
